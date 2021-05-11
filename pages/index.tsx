@@ -13,17 +13,28 @@ interface Playlist {
 }
 
 export default function HomePage({ redirectUri, clientId }: Props) {
-  const scopes =
-    "user-read-playback-state user-modify-playback-state user-private-read playlist-read-private playlist-read-collaborative user-library-read"
+  const scopes = [
+    "user-read-playback-state",
+    "user-modify-playback-state",
+    "user-private-read",
+    "playlist-read-private",
+    "playlist-read-collaborative",
+    "user-library-read",
+  ].join(" ")
+
   const spotifyAuthURL = `https://accounts.spotify.com/authorize?response_type=token&client_id=${clientId}&redirect_uri=${encodeURIComponent(
     redirectUri
-  )}&scopes=${encodeURIComponent(scopes)}`
+  )}&scopes=${encodeURIComponent(scopes)}&show_dialog=false`
+
   const [token, setToken] = useState<string>(null)
   const [viewerName, setViewerName] = useState<string>(null)
-  const [playlistName, setPlaylistName] = useState<string>(null)
   const [popupBlocked, setPopupBlocked] = useState(false)
   const [playlist, setPlaylist] = useState<Playlist>(null)
 
+  /**
+   * If the page loads with an access_token hash location, extract it for use
+   * in API calls
+   */
   useEffect(function getTokenFromLocation() {
     const hash = window.location.hash
 
@@ -34,6 +45,10 @@ export default function HomePage({ redirectUri, clientId }: Props) {
     }
   }, [])
 
+  /**
+   * If we have an access token, grab the user's name so we can show they're
+   * logged in
+   */
   useEffect(
     function fetchAndSetViewerName() {
       if (token) {
@@ -51,6 +66,10 @@ export default function HomePage({ redirectUri, clientId }: Props) {
     [token]
   )
 
+  /**
+   * The function responsible for opening Spotify after the user clicks "Choose
+   * a random playlist"
+   */
   async function pickAndPlayPlaylist() {
     const playlist = await fetch(
       "https://api.spotify.com/v1/me/playlists?limit=50",
